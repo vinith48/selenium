@@ -17,8 +17,12 @@ public abstract class BaseTest {
 
     protected WebDriver driver;
 
+    protected RuntimeProperties runtimeProperties;
+
     @BeforeEach
     void setUp() {
+        runtimeProperties = RuntimeProperties.load();
+
         String browserProperty = System.getProperty("browser");
         String browser = (browserProperty == null || browserProperty.isBlank())
                 ? "chrome"
@@ -52,6 +56,37 @@ public abstract class BaseTest {
             remoteUrl = System.getenv("SELENIUM_REMOTE_URL");
         }
         return (remoteUrl == null || remoteUrl.isBlank()) ? null : remoteUrl.trim();
+    }
+
+    protected String customerCode() {
+        return runtimeProperties.customerCode();
+    }
+
+    protected String env() {
+        return runtimeProperties.env();
+    }
+
+    protected String tag() {
+        return runtimeProperties.tag();
+    }
+
+    protected record RuntimeProperties(String customerCode, String env, String tag) {
+
+        static RuntimeProperties load() {
+            return new RuntimeProperties(
+                    readValue("customerCode", "CUSTOMER_CODE"),
+                    readValue("env", "TEST_ENV"),
+                    readValue("tag", "TAG")
+            );
+        }
+
+        private static String readValue(String propertyName, String environmentName) {
+            String value = System.getProperty(propertyName);
+            if (value == null || value.isBlank()) {
+                value = System.getenv(environmentName);
+            }
+            return (value == null || value.isBlank()) ? null : value.trim();
+        }
     }
 
     private void configureHeadlessOptions(ChromeOptions options, boolean headless) {
